@@ -220,17 +220,17 @@ export default function ClassScreen() {
                   {/* Kopfzeile */}
                   <Row style={[styles.tr, styles.thead]}>
                     <Text style={[styles.nameCell, styles.th]}>Name</Text>
+                    <View style={styles.pointCell}>
+                      <Text style={styles.th}>Gesamt</Text>
+                      <Text style={styles.thMax}>max. {maxTotalPoints(scheme)}</Text>
+                    </View>
+                    <Text style={[styles.gradeCell, styles.th]}>Note</Text>
                     {scheme.categories.map((cat) => (
                       <View key={cat.id} style={styles.pointCell}>
                         <Text style={styles.th} numberOfLines={1}>{cat.shortName}</Text>
                         <Text style={styles.thMax}>max. {cat.maxPoints}</Text>
                       </View>
                     ))}
-                    <View style={styles.pointCell}>
-                      <Text style={styles.th}>Gesamt</Text>
-                      <Text style={styles.thMax}>max. {maxTotalPoints(scheme)}</Text>
-                    </View>
-                    <Text style={[styles.gradeCell, styles.th]}>Note</Text>
                   </Row>
 
                   {students.map((student, idx) => {
@@ -259,6 +259,19 @@ export default function ClassScreen() {
                             <Text style={[styles.nameCell, styles.name]} numberOfLines={1}>
                               {student.lastName} {student.firstName}
                             </Text>
+                            <Text style={[styles.pointCell, styles.points, styles.total]}>
+                              {formatPoints(total)}
+                            </Text>
+                            <View style={styles.gradeCell}>
+                              <View
+                                style={[
+                                  styles.gradeBadge,
+                                  { backgroundColor: GRADE_COLORS[grade.value] },
+                                ]}
+                              >
+                                <Text style={styles.gradeText}>{grade.value}</Text>
+                              </View>
+                            </View>
                             {scheme.categories.map((cat) => {
                               const val = byCat[cat.id];
                               const over = val !== undefined && val > cat.maxPoints;
@@ -275,19 +288,6 @@ export default function ClassScreen() {
                                 </Text>
                               );
                             })}
-                            <Text style={[styles.pointCell, styles.points, styles.total]}>
-                              {formatPoints(total)}
-                            </Text>
-                            <View style={styles.gradeCell}>
-                              <View
-                                style={[
-                                  styles.gradeBadge,
-                                  { backgroundColor: GRADE_COLORS[grade.value] },
-                                ]}
-                              >
-                                <Text style={styles.gradeText}>{grade.value}</Text>
-                              </View>
-                            </View>
                           </Row>
                         )}
                       </Pressable>
