@@ -40,8 +40,30 @@ Danach öffnet sich die App im Browser unter http://localhost:8081
 - Regelmäßig über „Sicherung“ eine Sicherungsdatei erstellen!
   Beim Leeren der Browserdaten gehen die App-Daten sonst verloren.
 
-## Nächste Schritte (geplant)
+## Online-Adresse (installierbare Web-App)
 
-- Bereitstellung als installierbare Web-App (PWA) über einen Link,
-  damit die App auf PC und Mac ohne Installation genutzt werden kann.
-- Später: Android-/iOS-Version über Expo (gleicher Code).
+Die App ist als PWA veröffentlicht (nur der Programmcode – keine Daten):
+
+**https://rrabbit69.github.io/musik-punkte/**
+
+Installation: Link in Chrome/Edge (PC) bzw. Chrome/Safari (Mac) öffnen
+→ „App installieren“ in der Adressleiste (Safari: Teilen → „Zum Dock
+hinzufügen“). Danach eigenes App-Symbol, läuft auch offline.
+
+## Neue Version veröffentlichen (nach Code-Änderungen)
+
+```powershell
+cd MusikPunkte
+npx expo export --platform web
+Copy-Item dist\index.html dist\404.html -Force
+git -C dist add -A
+git -C dist commit -m "Deploy"
+git -C dist push -f https://github.com/RRabbit69/musik-punkte.git gh-pages
+```
+
+Quellcode-Repository: https://github.com/RRabbit69/musik-punkte
+(Änderungen am Code zusätzlich normal committen und auf `main` pushen.)
+
+## Später möglich
+
+- Android-/iOS-Version über Expo (gleicher Code).
