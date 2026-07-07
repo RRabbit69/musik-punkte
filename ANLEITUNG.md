@@ -52,10 +52,16 @@ hinzufügen“). Danach eigenes App-Symbol, läuft auch offline.
 
 ## Neue Version veröffentlichen (nach Code-Änderungen)
 
+Am einfachsten das Skript `deploy.ps1` verwenden (macht alle Schritte
+unten automatisch). Manuell – wichtig: `expo export` löscht `dist`
+samt `.git`, daher muss dort jedes Mal neu initialisiert werden:
+
 ```powershell
 cd MusikPunkte
 npx expo export --platform web
 Copy-Item dist\index.html dist\404.html -Force
+New-Item -ItemType File dist\.nojekyll -Force
+git -C dist init -b gh-pages
 git -C dist add -A
 git -C dist commit -m "Deploy"
 git -C dist push -f https://github.com/RRabbit69/musik-punkte.git gh-pages
