@@ -167,6 +167,53 @@ export function Sheet({
   );
 }
 
+// Pastellfarben zur Auswahl für Klassen
+export const PASTEL_COLORS = [
+  '#fecaca', // Rot
+  '#fed7aa', // Orange
+  '#fef08a', // Gelb
+  '#d9f99d', // Limette
+  '#bbf7d0', // Grün
+  '#a5f3fc', // Türkis
+  '#bfdbfe', // Blau
+  '#ddd6fe', // Violett
+  '#fbcfe8', // Rosa
+];
+
+export function ColorPicker({
+  value,
+  onChange,
+}: {
+  value?: string;
+  onChange: (color?: string) => void;
+}) {
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      <Pressable
+        onPress={() => onChange(undefined)}
+        style={[
+          styles.swatch,
+          { backgroundColor: '#fff' },
+          value === undefined && styles.swatchActive,
+        ]}
+      >
+        <Text style={{ fontSize: 15, color: C.textMuted }}>✕</Text>
+      </Pressable>
+      {PASTEL_COLORS.map((color) => (
+        <Pressable
+          key={color}
+          onPress={() => onChange(color)}
+          style={[
+            styles.swatch,
+            { backgroundColor: color },
+            value === color && styles.swatchActive,
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
+
 export function EmptyState({ title, hint }: { title: string; hint?: string }) {
   return (
     <View style={{ alignItems: 'center', paddingVertical: 48, gap: 8 }}>
@@ -265,4 +312,17 @@ const styles = StyleSheet.create({
   },
   sheetTitle: { fontSize: 16, fontWeight: '700', color: C.text },
   sheetClose: { fontSize: 18, color: C.textMuted, paddingHorizontal: 4 },
+  swatch: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: C.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  swatchActive: {
+    borderColor: C.primary,
+    borderWidth: 3,
+  },
 });

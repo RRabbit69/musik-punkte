@@ -44,7 +44,12 @@ export function normalizeData(raw: unknown): AppData {
 type StoreContextValue = {
   data: AppData;
   loaded: boolean;
-  addClass: (name: string, schoolYear: string, schemeId: string) => SchoolClass;
+  addClass: (
+    name: string,
+    schoolYear: string,
+    schemeId: string,
+    color?: string
+  ) => SchoolClass;
   updateClass: (id: string, patch: Partial<SchoolClass>) => void;
   deleteClass: (id: string) => void;
   addStudent: (classId: string, lastName: string, firstName: string) => Student;
@@ -90,8 +95,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [data, loaded]);
 
   const addClass = useCallback(
-    (name: string, schoolYear: string, schemeId: string) => {
-      const cls: SchoolClass = { id: newId(), name, schoolYear, schemeId };
+    (name: string, schoolYear: string, schemeId: string, color?: string) => {
+      const cls: SchoolClass = { id: newId(), name, schoolYear, schemeId, color };
       setData((d) => ({ ...d, classes: [...d.classes, cls] }));
       return cls;
     },

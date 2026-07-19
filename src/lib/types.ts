@@ -27,6 +27,8 @@ export type SchoolClass = {
   name: string; // z. B. "8BC"
   schoolYear: string; // z. B. "2025/26"
   schemeId: string;
+  color?: string; // Pastellfarbe für die Übersicht
+  archived?: boolean;
 };
 
 export type Student = {

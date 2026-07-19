@@ -6,6 +6,7 @@ import {
   Button,
   C,
   Card,
+  ColorPicker,
   confirmAsync,
   EmptyState,
   Field,
@@ -72,6 +73,7 @@ export default function ClassScreen() {
   const [showEdit, setShowEdit] = useState(false);
   const [editName, setEditName] = useState('');
   const [editYear, setEditYear] = useState('');
+  const [editColor, setEditColor] = useState<string | undefined>(undefined);
 
   if (!cls || !scheme) {
     return <EmptyState title="Klasse nicht gefunden" />;
@@ -170,11 +172,21 @@ export default function ClassScreen() {
   const openEdit = () => {
     setEditName(cls.name);
     setEditYear(cls.schoolYear);
+    setEditColor(cls.color);
     setShowEdit(true);
   };
 
   const saveEdit = () => {
-    updateClass(cls.id, { name: editName.trim(), schoolYear: editYear.trim() });
+    updateClass(cls.id, {
+      name: editName.trim(),
+      schoolYear: editYear.trim(),
+      color: editColor,
+    });
+    setShowEdit(false);
+  };
+
+  const toggleArchive = () => {
+    updateClass(cls.id, { archived: !cls.archived });
     setShowEdit(false);
   };
 
@@ -453,8 +465,21 @@ export default function ClassScreen() {
       <Sheet visible={showEdit} title="Klasse bearbeiten" onClose={() => setShowEdit(false)}>
         <Field label="Klassenname" value={editName} onChangeText={setEditName} />
         <Field label="Schuljahr" value={editYear} onChangeText={setEditYear} />
+        <Text style={styles.fieldLabel}>Farbe (für die Übersicht)</Text>
+        <ColorPicker value={editColor} onChange={setEditColor} />
+        <View style={{ height: 18 }} />
         <Button title="Speichern" onPress={saveEdit} disabled={!editName.trim()} />
         <View style={{ height: 24 }} />
+        <Button
+          title={cls.archived ? 'Aus dem Archiv holen' : 'Klasse archivieren'}
+          variant="secondary"
+          onPress={toggleArchive}
+        />
+        <Text style={styles.archiveHint}>
+          Archivierte Klassen wandern auf der Startseite in den Bereich
+          „Archiv“ und bleiben dort einsehbar.
+        </Text>
+        <View style={{ height: 12 }} />
         <Button title="Klasse löschen …" variant="danger" onPress={removeClass} />
       </Sheet>
     </>
@@ -501,6 +526,12 @@ const styles = StyleSheet.create({
   },
   fieldLabel: { fontSize: 13, fontWeight: '600', color: C.textMuted, marginBottom: 6 },
   hint: { fontSize: 13, color: C.textMuted, marginBottom: 10, fontStyle: 'italic' },
+  archiveHint: {
+    fontSize: 12,
+    color: C.textMuted,
+    lineHeight: 17,
+    marginTop: 8,
+  },
   chip: {
     borderWidth: 1,
     borderColor: C.border,
