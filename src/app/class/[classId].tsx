@@ -16,17 +16,19 @@ import {
 } from '@/components/ui';
 import { exportCsv } from '@/lib/backup';
 import {
+  carryoverFor,
   defaultSemester,
   filterEntries,
+  formatCarryover,
   formatPoints,
   GRADE_COLORS,
   gradeForPoints,
+  gradeScaleText,
   maxTotalPoints,
   parsePoints,
   sumByCategory,
   sumPoints,
   todayIso,
-  type SemesterFilter,
 } from '@/lib/grades';
 import { sortStudents, useStore } from '@/lib/store';
 import type { Semester } from '@/lib/types';
@@ -49,7 +51,7 @@ export default function ClassScreen() {
     [data.students, classId]
   );
 
-  const [semester, setSemester] = useState<SemesterFilter>('all');
+  const [semester, setSemester] = useState<Semester>(defaultSemester());
 
   // Schüler:innen hinzufügen
   const [showAddStudents, setShowAddStudents] = useState(false);
@@ -133,28 +135,32 @@ export default function ClassScreen() {
     const rows: string[][] = [];
     rows.push([
       'Name',
-      ...scheme.categories.map((c) => `${c.name} (max. ${c.maxPoints})`),
       'Gesamt',
       'Note',
+      ...(semester === 2 ? ['Übertrag aus 1. Sem.'] : []),
+      ...scheme.categories.map((c) => `${c.name} (max. ${c.maxPoints})`),
     ]);
     for (const student of students) {
       const entries = filterEntries(data.entries, student.id, semester);
       const byCat = sumByCategory(entries);
-      const total = sumPoints(entries);
+      const carry = carryoverFor(student, semester);
+      const total = sumPoints(entries) + carry;
       const grade = gradeForPoints(scheme, total);
       rows.push([
         `${student.lastName} ${student.firstName}`.trim(),
+        formatPoints(total),
+        `${grade.label} (${grade.value})`,
+        ...(semester === 2 ? [carry !== 0 ? formatCarryover(carry) : ''] : []),
         ...scheme.categories.map((c) =>
           byCat[c.id] !== undefined ? formatPoints(byCat[c.id]) : ''
         ),
-        formatPoints(total),
-        `${grade.label} (${grade.value})`,
       ]);
     }
-    const sem =
-      semester === 'all' ? 'Gesamtjahr' : `Semester${semester}`;
     try {
-      exportCsv(`${cls.name}_${cls.schoolYear.replace('/', '-')}_${sem}.csv`, rows);
+      exportCsv(
+        `${cls.name}_${cls.schoolYear.replace('/', '-')}_Semester${semester}.csv`,
+        rows
+      );
     } catch (e) {
       notify('Export nicht möglich', String((e as Error).message));
     }
@@ -191,11 +197,10 @@ export default function ClassScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.inner}>
           <Row style={{ flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 12 }}>
-            <Segmented<SemesterFilter>
+            <Segmented<Semester>
               options={[
                 { label: '1. Semester', value: 1 },
                 { label: '2. Semester', value: 2 },
-                { label: 'Gesamtjahr', value: 'all' },
               ]}
               value={semester}
               onChange={setSemester}
@@ -225,6 +230,12 @@ export default function ClassScreen() {
                       <Text style={styles.thMax}>max. {maxTotalPoints(scheme)}</Text>
                     </View>
                     <Text style={[styles.gradeCell, styles.th]}>Note</Text>
+                    {semester === 2 ? (
+                      <View style={styles.pointCell}>
+                        <Text style={styles.th}>Übertrag</Text>
+                        <Text style={styles.thMax}>aus 1. Sem.</Text>
+                      </View>
+                    ) : null}
                     {scheme.categories.map((cat) => (
                       <View key={cat.id} style={styles.pointCell}>
                         <Text style={styles.th} numberOfLines={1}>{cat.shortName}</Text>
@@ -236,7 +247,8 @@ export default function ClassScreen() {
                   {students.map((student, idx) => {
                     const entries = filterEntries(data.entries, student.id, semester);
                     const byCat = sumByCategory(entries);
-                    const total = sumPoints(entries);
+                    const carry = carryoverFor(student, semester);
+                    const total = sumPoints(entries) + carry;
                     const grade = gradeForPoints(scheme, total);
                     return (
                       <Pressable
@@ -272,6 +284,11 @@ export default function ClassScreen() {
                                 <Text style={styles.gradeText}>{grade.value}</Text>
                               </View>
                             </View>
+                            {semester === 2 ? (
+                              <Text style={[styles.pointCell, styles.points]}>
+                                {carry !== 0 ? formatCarryover(carry) : '–'}
+                              </Text>
+                            ) : null}
                             {scheme.categories.map((cat) => {
                               const val = byCat[cat.id];
                               const over = val !== undefined && val > cat.maxPoints;
@@ -299,11 +316,7 @@ export default function ClassScreen() {
           )}
 
           <Text style={styles.legend}>
-            Notenschlüssel ({scheme.name}):{' '}
-            {[...scheme.gradeSteps]
-              .sort((a, b) => b.min - a.min)
-              .map((s) => `${s.label} ab ${s.min} P`)
-              .join(' · ')}
+            Notenschlüssel ({scheme.name}): {gradeScaleText(scheme)}
           </Text>
         </View>
       </ScrollView>
@@ -406,7 +419,10 @@ export default function ClassScreen() {
           value={bulkSemester}
           onChange={setBulkSemester}
         />
-        <View style={{ height: 16 }} />
+        <Text style={styles.scaleInfo}>
+          Notenschlüssel: {gradeScaleText(scheme)}
+        </Text>
+        <View style={{ height: 8 }} />
         <Text style={styles.fieldLabel}>
           Punkte (leer lassen = kein Eintrag){bulkCategory ? ` · max. ${bulkCategory.maxPoints} P` : ''}
         </Text>
@@ -471,6 +487,16 @@ const styles = StyleSheet.create({
   },
   gradeText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   legend: { fontSize: 12.5, color: C.textMuted, marginTop: 12, lineHeight: 18 },
+  scaleInfo: {
+    fontSize: 12.5,
+    color: C.primaryDark,
+    marginTop: 12,
+    lineHeight: 18,
+    backgroundColor: C.primaryLight,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
   fieldLabel: { fontSize: 13, fontWeight: '600', color: C.textMuted, marginBottom: 6 },
   hint: { fontSize: 13, color: C.textMuted, marginBottom: 10, fontStyle: 'italic' },
   chip: {

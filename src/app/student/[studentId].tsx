@@ -14,18 +14,22 @@ import {
   Sheet,
 } from '@/components/ui';
 import {
+  CARRYOVER_MAX,
+  CARRYOVER_MIN,
+  carryoverFor,
   defaultSemester,
   filterEntries,
+  formatCarryover,
   formatDate,
   formatPoints,
   GRADE_COLORS,
   gradeForPoints,
+  gradeScaleText,
   maxTotalPoints,
   parsePoints,
   sumByCategory,
   sumPoints,
   todayIso,
-  type SemesterFilter,
 } from '@/lib/grades';
 import { useStore } from '@/lib/store';
 import type { Entry, Semester } from '@/lib/types';
@@ -40,7 +44,7 @@ export default function StudentScreen() {
   const cls = data.classes.find((c) => c.id === student?.classId);
   const scheme = data.schemes.find((s) => s.id === cls?.schemeId);
 
-  const [semester, setSemester] = useState<SemesterFilter>('all');
+  const [semester, setSemester] = useState<Semester>(defaultSemester());
 
   // Eintrag anlegen/bearbeiten
   const [showEntry, setShowEntry] = useState(false);
@@ -56,6 +60,7 @@ export default function StudentScreen() {
   const [editLast, setEditLast] = useState('');
   const [editFirst, setEditFirst] = useState('');
   const [editNotes, setEditNotes] = useState('');
+  const [editCarry, setEditCarry] = useState('');
 
   const entries = useMemo(() => {
     if (!student) return [];
@@ -69,7 +74,8 @@ export default function StudentScreen() {
   }
 
   const byCat = sumByCategory(entries);
-  const total = sumPoints(entries);
+  const carry = carryoverFor(student, semester);
+  const total = sumPoints(entries) + carry;
   const grade = gradeForPoints(scheme, total);
 
   const openNewEntry = (catId?: string) => {
@@ -129,14 +135,21 @@ export default function StudentScreen() {
     setEditLast(student.lastName);
     setEditFirst(student.firstName);
     setEditNotes(student.notes ?? '');
+    setEditCarry(student.carryover ? formatPoints(student.carryover) : '');
     setShowEditStudent(true);
   };
 
   const saveStudent = () => {
+    const parsedCarry = parsePoints(editCarry);
+    const clampedCarry =
+      parsedCarry === null
+        ? undefined
+        : Math.max(CARRYOVER_MIN, Math.min(CARRYOVER_MAX, parsedCarry)) || undefined;
     updateStudent(student.id, {
       lastName: editLast.trim(),
       firstName: editFirst.trim(),
       notes: editNotes.trim() || undefined,
+      carryover: clampedCarry,
     });
     setShowEditStudent(false);
   };
@@ -162,11 +175,10 @@ export default function StudentScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.inner}>
           <Row style={{ flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 12 }}>
-            <Segmented<SemesterFilter>
+            <Segmented<Semester>
               options={[
                 { label: '1. Semester', value: 1 },
                 { label: '2. Semester', value: 2 },
-                { label: 'Gesamtjahr', value: 'all' },
               ]}
               value={semester}
               onChange={setSemester}
@@ -181,7 +193,7 @@ export default function StudentScreen() {
           <Card style={{ marginBottom: 12 }}>
             <Row style={{ justifyContent: 'space-between', marginBottom: 12 }}>
               <Text style={styles.sumTitle}>
-                Punktestand ({semester === 'all' ? 'Gesamtjahr' : `${semester}. Semester`})
+                Punktestand ({semester}. Semester)
               </Text>
               <Row>
                 <Text style={styles.totalPoints}>
@@ -194,6 +206,23 @@ export default function StudentScreen() {
                 </View>
               </Row>
             </Row>
+            {semester === 2 ? (
+              <Pressable onPress={openEditStudent}>
+                <Row style={{ marginBottom: 10 }}>
+                  <Text style={styles.catName}>Übertrag aus 1. Semester</Text>
+                  <View style={{ flex: 1 }} />
+                  <Text
+                    style={[
+                      styles.carryValue,
+                      carry < 0 && { color: C.danger },
+                      carry === 0 && { color: C.textMuted, fontWeight: '400' },
+                    ]}
+                  >
+                    {carry !== 0 ? `${formatCarryover(carry)} P` : 'kein Übertrag'}
+                  </Text>
+                </Row>
+              </Pressable>
+            ) : null}
             {scheme.categories.map((cat) => {
               const val = byCat[cat.id] ?? 0;
               const ratio = cat.maxPoints > 0 ? Math.min(val / cat.maxPoints, 1) : 0;
@@ -324,6 +353,9 @@ export default function StudentScreen() {
           value={entrySemester}
           onChange={setEntrySemester}
         />
+        <Text style={styles.scaleInfo}>
+          Notenschlüssel: {gradeScaleText(scheme)}
+        </Text>
         <View style={{ marginTop: 18 }}>
           <Button
             title="Speichern"
@@ -346,6 +378,17 @@ export default function StudentScreen() {
       >
         <Field label="Nachname" value={editLast} onChangeText={setEditLast} />
         <Field label="Vorname" value={editFirst} onChangeText={setEditFirst} />
+        <Field
+          label={`Übertrag ins 2. Semester (${CARRYOVER_MIN} bis +${CARRYOVER_MAX} P)`}
+          value={editCarry}
+          onChangeText={setEditCarry}
+          placeholder="z. B. -2 oder 5"
+        />
+        <Text style={styles.carryHint}>
+          Zählt zusätzlich zu den Punkten des 2. Semesters: negativ, wenn im
+          1. Semester Punkte für die bessere Note vorgestreckt wurden; positiv,
+          wenn Punkte über dem Maximum mitgenommen werden.
+        </Text>
         <Field
           label="Notizen (optional)"
           value={editNotes}
@@ -384,6 +427,24 @@ const styles = StyleSheet.create({
   barFill: { height: '100%', borderRadius: 5, backgroundColor: C.primary },
   catPoints: { width: 80, textAlign: 'right', fontSize: 13, color: C.textMuted },
   tapHint: { fontSize: 12, color: C.textMuted, marginTop: 8, fontStyle: 'italic' },
+  carryValue: { fontSize: 13.5, fontWeight: '700', color: C.primaryDark },
+  carryHint: {
+    fontSize: 12,
+    color: C.textMuted,
+    lineHeight: 17,
+    marginTop: -6,
+    marginBottom: 12,
+  },
+  scaleInfo: {
+    fontSize: 12.5,
+    color: C.primaryDark,
+    marginTop: 12,
+    lineHeight: 18,
+    backgroundColor: C.primaryLight,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',

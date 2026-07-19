@@ -27,8 +27,11 @@ Danach öffnet sich die App im Browser unter http://localhost:8081
    dort sieht man alle Einträge, den Punktestand pro Kategorie und die
    aktuelle Note. Ein Klick auf eine Kategorie trägt dafür Punkte ein,
    ein Klick auf einen Eintrag bearbeitet oder löscht ihn.
-5. **Note** – wird automatisch aus den Gesamtpunkten laut Punktetabelle
-   berechnet (umschaltbar: 1. Semester / 2. Semester / Gesamtjahr).
+5. **Note** – wird automatisch aus den Punkten des gewählten Semesters
+   laut Punktetabelle berechnet (umschaltbar: 1. / 2. Semester).
+   **Übertrag:** Pro Schüler:in können −5 bis +5 Punkte ins 2. Semester
+   mitgenommen werden (einstellbar in der Schüleransicht über „⋯“).
+   Der Übertrag zählt automatisch zum Punktestand des 2. Semesters.
 6. **CSV** – exportiert die Klassenliste für Excel.
 7. **Sicherung** (oben rechts auf der Startseite) – Daten als Datei
    sichern und auf einem anderen Gerät (z. B. Mac) wieder laden.

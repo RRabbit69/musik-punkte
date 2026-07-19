@@ -1,15 +1,32 @@
-import type { Entry, GradeStep, Scheme, Semester } from './types';
-
-export type SemesterFilter = Semester | 'all';
+import type { Entry, GradeStep, Scheme, Semester, Student } from './types';
 
 export function filterEntries(
   entries: Entry[],
   studentId: string,
-  semester: SemesterFilter
+  semester: Semester
 ): Entry[] {
   return entries.filter(
-    (e) => e.studentId === studentId && (semester === 'all' || e.semester === semester)
+    (e) => e.studentId === studentId && e.semester === semester
   );
+}
+
+// Übertrag aus dem 1. Semester: zählt nur im 2. Semester
+export function carryoverFor(student: Student, semester: Semester): number {
+  return semester === 2 ? (student.carryover ?? 0) : 0;
+}
+
+export const CARRYOVER_MIN = -5;
+export const CARRYOVER_MAX = 5;
+
+export function formatCarryover(value: number): string {
+  return (value > 0 ? '+' : '') + formatPoints(value);
+}
+
+export function gradeScaleText(scheme: Scheme): string {
+  return [...scheme.gradeSteps]
+    .sort((a, b) => b.min - a.min)
+    .map((s) => `${s.label} ab ${s.min} P`)
+    .join(' · ');
 }
 
 export function sumPoints(entries: Entry[]): number {

@@ -35,6 +35,8 @@ export type Student = {
   lastName: string;
   firstName: string;
   notes?: string;
+  // Punkteübertrag ins 2. Semester (-5 bis +5)
+  carryover?: number;
 };
 
 export type Semester = 1 | 2;
