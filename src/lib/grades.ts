@@ -10,9 +10,23 @@ export function filterEntries(
   );
 }
 
-// Übertrag aus dem 1. Semester: zählt nur im 2. Semester
-export function carryoverFor(student: Student, semester: Semester): number {
-  return semester === 2 ? (student.carryover ?? 0) : 0;
+// Punkte über der "Sehr gut"-Grenze des 1. Semesters, gedeckelt auf +5
+export function autoCarryover(scheme: Scheme, sem1Total: number): number {
+  const sehrGutMin = Math.max(...scheme.gradeSteps.map((s) => s.min));
+  return Math.min(CARRYOVER_MAX, Math.max(0, sem1Total - sehrGutMin));
+}
+
+// Übertrag aus dem 1. Semester: zählt nur im 2. Semester.
+// Manuell gesetzter Wert überschreibt die Automatik.
+export function carryoverFor(
+  student: Student,
+  scheme: Scheme,
+  sem1Total: number,
+  semester: Semester
+): number {
+  if (semester !== 2) return 0;
+  if (typeof student.carryover === 'number') return student.carryover;
+  return autoCarryover(scheme, sem1Total);
 }
 
 export const CARRYOVER_MIN = -5;

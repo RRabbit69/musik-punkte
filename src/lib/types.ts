@@ -35,7 +35,9 @@ export type Student = {
   lastName: string;
   firstName: string;
   notes?: string;
-  // Punkteübertrag ins 2. Semester (-5 bis +5)
+  // Manueller Punkteübertrag ins 2. Semester (-5 bis +5).
+  // undefined = automatisch (Punkte über der "Sehr gut"-Grenze des
+  // 1. Semesters, max. +5); ein gesetzter Wert überschreibt die Automatik.
   carryover?: number;
 };
 

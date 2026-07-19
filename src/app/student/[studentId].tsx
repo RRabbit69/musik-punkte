@@ -74,7 +74,9 @@ export default function StudentScreen() {
   }
 
   const byCat = sumByCategory(entries);
-  const carry = carryoverFor(student, semester);
+  const sem1Total = sumPoints(filterEntries(data.entries, student.id, 1));
+  const carry = carryoverFor(student, scheme, sem1Total, semester);
+  const carryIsAuto = typeof student.carryover !== 'number';
   const total = sumPoints(entries) + carry;
   const grade = gradeForPoints(scheme, total);
 
@@ -135,7 +137,9 @@ export default function StudentScreen() {
     setEditLast(student.lastName);
     setEditFirst(student.firstName);
     setEditNotes(student.notes ?? '');
-    setEditCarry(student.carryover ? formatPoints(student.carryover) : '');
+    setEditCarry(
+      typeof student.carryover === 'number' ? formatPoints(student.carryover) : ''
+    );
     setShowEditStudent(true);
   };
 
@@ -144,7 +148,7 @@ export default function StudentScreen() {
     const clampedCarry =
       parsedCarry === null
         ? undefined
-        : Math.max(CARRYOVER_MIN, Math.min(CARRYOVER_MAX, parsedCarry)) || undefined;
+        : Math.max(CARRYOVER_MIN, Math.min(CARRYOVER_MAX, parsedCarry));
     updateStudent(student.id, {
       lastName: editLast.trim(),
       firstName: editFirst.trim(),
@@ -218,7 +222,9 @@ export default function StudentScreen() {
                       carry === 0 && { color: C.textMuted, fontWeight: '400' },
                     ]}
                   >
-                    {carry !== 0 ? `${formatCarryover(carry)} P` : 'kein Übertrag'}
+                    {carry !== 0
+                      ? `${formatCarryover(carry)} P${carryIsAuto ? ' (automatisch)' : ''}`
+                      : 'kein Übertrag'}
                   </Text>
                 </Row>
               </Pressable>
@@ -251,6 +257,10 @@ export default function StudentScreen() {
               Tipp: Auf eine Kategorie tippen, um dafür Punkte einzutragen.
             </Text>
           </Card>
+
+          <Text style={styles.legend}>
+            Notenschlüssel ({scheme.name}): {gradeScaleText(scheme)}
+          </Text>
 
           {/* Einträge */}
           <Text style={styles.sectionTitle}>Einträge</Text>
@@ -382,12 +392,13 @@ export default function StudentScreen() {
           label={`Übertrag ins 2. Semester (${CARRYOVER_MIN} bis +${CARRYOVER_MAX} P)`}
           value={editCarry}
           onChangeText={setEditCarry}
-          placeholder="z. B. -2 oder 5"
+          placeholder="leer = automatisch"
         />
         <Text style={styles.carryHint}>
-          Zählt zusätzlich zu den Punkten des 2. Semesters: negativ, wenn im
-          1. Semester Punkte für die bessere Note vorgestreckt wurden; positiv,
-          wenn Punkte über dem Maximum mitgenommen werden.
+          Leer lassen = automatisch: Punkte des 1. Semesters über der
+          „Sehr gut“-Grenze werden übernommen (max. +5). Ein eigener Wert
+          überschreibt die Automatik – z. B. −2, wenn im 1. Semester Punkte
+          für die bessere Note vorgestreckt wurden, oder 0 für keinen Übertrag.
         </Text>
         <Field
           label="Notizen (optional)"
@@ -428,6 +439,12 @@ const styles = StyleSheet.create({
   catPoints: { width: 80, textAlign: 'right', fontSize: 13, color: C.textMuted },
   tapHint: { fontSize: 12, color: C.textMuted, marginTop: 8, fontStyle: 'italic' },
   carryValue: { fontSize: 13.5, fontWeight: '700', color: C.primaryDark },
+  legend: {
+    fontSize: 12.5,
+    color: C.textMuted,
+    marginBottom: 12,
+    lineHeight: 18,
+  },
   carryHint: {
     fontSize: 12,
     color: C.textMuted,

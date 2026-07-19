@@ -143,7 +143,8 @@ export default function ClassScreen() {
     for (const student of students) {
       const entries = filterEntries(data.entries, student.id, semester);
       const byCat = sumByCategory(entries);
-      const carry = carryoverFor(student, semester);
+      const sem1Total = sumPoints(filterEntries(data.entries, student.id, 1));
+      const carry = carryoverFor(student, scheme, sem1Total, semester);
       const total = sumPoints(entries) + carry;
       const grade = gradeForPoints(scheme, total);
       rows.push([
@@ -247,7 +248,8 @@ export default function ClassScreen() {
                   {students.map((student, idx) => {
                     const entries = filterEntries(data.entries, student.id, semester);
                     const byCat = sumByCategory(entries);
-                    const carry = carryoverFor(student, semester);
+                    const sem1Total = sumPoints(filterEntries(data.entries, student.id, 1));
+                    const carry = carryoverFor(student, scheme, sem1Total, semester);
                     const total = sumPoints(entries) + carry;
                     const grade = gradeForPoints(scheme, total);
                     return (
