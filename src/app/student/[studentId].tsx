@@ -173,9 +173,26 @@ export default function StudentScreen() {
   const selectedCategory = scheme.categories.find((c) => c.id === categoryId);
   const fullName = `${student.lastName} ${student.firstName}`.trim();
 
+  const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace({ pathname: '/class/[classId]', params: { classId: cls.id } });
+    }
+  };
+
   return (
     <>
-      <Stack.Screen options={{ title: `${fullName} (${cls.name})` }} />
+      <Stack.Screen
+        options={{
+          title: `${fullName} (${cls.name})`,
+          headerLeft: () => (
+            <Pressable onPress={goBack} hitSlop={12}>
+              <Text style={styles.backArrow}>←</Text>
+            </Pressable>
+          ),
+        }}
+      />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.inner}>
           <Row style={{ flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -439,6 +456,12 @@ const styles = StyleSheet.create({
   catPoints: { width: 80, textAlign: 'right', fontSize: 13, color: C.textMuted },
   tapHint: { fontSize: 12, color: C.textMuted, marginTop: 8, fontStyle: 'italic' },
   carryValue: { fontSize: 13.5, fontWeight: '700', color: C.primaryDark },
+  backArrow: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: '700',
+    paddingHorizontal: 12,
+  },
   legend: {
     fontSize: 12.5,
     color: C.textMuted,

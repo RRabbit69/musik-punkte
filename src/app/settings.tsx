@@ -1,5 +1,6 @@
+import { Stack, useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button, C, Card, confirmAsync, notify } from '@/components/ui';
 import { exportBackup, pickBackupFile } from '@/lib/backup';
@@ -7,6 +8,15 @@ import { useStore } from '@/lib/store';
 
 export default function SettingsScreen() {
   const { data, replaceAll } = useStore();
+  const router = useRouter();
+
+  const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
+  };
 
   const doExport = () => {
     try {
@@ -35,6 +45,15 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <Stack.Screen
+        options={{
+          headerLeft: () => (
+            <Pressable onPress={goBack} hitSlop={12}>
+              <Text style={styles.backArrow}>←</Text>
+            </Pressable>
+          ),
+        }}
+      />
       <View style={styles.inner}>
         <Card style={{ marginBottom: 16 }}>
           <Text style={styles.title}>Daten sichern</Text>
@@ -80,4 +99,10 @@ const styles = StyleSheet.create({
   inner: { width: '100%', maxWidth: 640 },
   title: { fontSize: 16, fontWeight: '700', color: C.text, marginBottom: 6 },
   text: { fontSize: 14, color: C.textMuted, lineHeight: 20, marginBottom: 14 },
+  backArrow: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: '700',
+    paddingHorizontal: 12,
+  },
 });

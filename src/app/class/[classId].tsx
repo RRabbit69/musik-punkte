@@ -204,9 +204,26 @@ export default function ClassScreen() {
 
   const bulkCategory = scheme.categories.find((c) => c.id === bulkCategoryId);
 
+  const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
+  };
+
   return (
     <>
-      <Stack.Screen options={{ title: `${cls.name} · ${cls.schoolYear}` }} />
+      <Stack.Screen
+        options={{
+          title: `${cls.name} · ${cls.schoolYear}`,
+          headerLeft: () => (
+            <Pressable onPress={goBack} hitSlop={12}>
+              <Text style={styles.backArrow}>←</Text>
+            </Pressable>
+          ),
+        }}
+      />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.inner}>
           <Row style={{ flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -531,6 +548,12 @@ const styles = StyleSheet.create({
     color: C.textMuted,
     lineHeight: 17,
     marginTop: 8,
+  },
+  backArrow: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: '700',
+    paddingHorizontal: 12,
   },
   chip: {
     borderWidth: 1,
