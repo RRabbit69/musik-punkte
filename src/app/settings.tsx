@@ -3,11 +3,15 @@ import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button, C, Card, confirmAsync, notify } from '@/components/ui';
-import { exportBackup, pickBackupFile } from '@/lib/backup';
+import {
+  backupAgeLabel,
+  exportBackup,
+  pickBackupFile,
+} from '@/lib/backup';
 import { useStore } from '@/lib/store';
 
 export default function SettingsScreen() {
-  const { data, replaceAll } = useStore();
+  const { data, replaceAll, lastBackup, markBackedUp } = useStore();
   const router = useRouter();
 
   const goBack = () => {
@@ -18,9 +22,10 @@ export default function SettingsScreen() {
     }
   };
 
-  const doExport = () => {
+  const doExport = async () => {
     try {
-      exportBackup(data);
+      const saved = await exportBackup(data);
+      if (saved) markBackedUp();
     } catch (e) {
       notify('Export nicht möglich', String((e as Error).message));
     }
@@ -36,6 +41,7 @@ export default function SettingsScreen() {
       );
       if (ok) {
         replaceAll(imported);
+        markBackedUp();
         notify('Sicherung geladen', 'Die Daten wurden übernommen.');
       }
     } catch (e) {
@@ -59,10 +65,15 @@ export default function SettingsScreen() {
           <Text style={styles.title}>Daten sichern</Text>
           <Text style={styles.text}>
             Speichert alle Klassen, Schüler:innen und Punkte in eine Datei
-            (z. B. „MusikPunkte_Sicherung_….json“). Diese Datei kannst du
-            aufbewahren oder auf einem anderen Computer wieder laden.
+            (z. B. „MusikPunkte_Sicherung_….json“). Am iPad/iPhone öffnet
+            sich das Teilen-Menü – dort „In Dateien sichern“ und iCloud
+            Drive wählen, dann ist die Sicherung auch bei Geräteverlust
+            geschützt. Am Computer wird die Datei heruntergeladen.
           </Text>
-          <Button title="Sicherungsdatei herunterladen" onPress={doExport} />
+          <Text style={[styles.text, { fontWeight: '600', color: C.text }]}>
+            Letzte Sicherung: {backupAgeLabel(lastBackup)}
+          </Text>
+          <Button title="Jetzt sichern" onPress={doExport} />
         </Card>
 
         <Card style={{ marginBottom: 16 }}>

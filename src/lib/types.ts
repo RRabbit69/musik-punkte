@@ -4,7 +4,10 @@ export type CategoryDef = {
   id: string;
   name: string;
   shortName: string;
+  // Bei repeatable gilt maxPoints pro Check/Übung (mehrere pro Semester
+  // möglich), sonst als Obergrenze für das Semester.
   maxPoints: number;
+  repeatable?: boolean;
   hint?: string;
 };
 

@@ -24,12 +24,53 @@ function downloadFile(filename: string, content: string, mime: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function exportBackup(data: AppData) {
-  downloadFile(
-    `MusikPunkte_Sicherung_${timestamp()}.json`,
-    JSON.stringify(data, null, 2),
-    'application/json'
+function isIosLike(): boolean {
+  const ua = navigator.userAgent;
+  return (
+    /iPad|iPhone|iPod/.test(ua) ||
+    (ua.includes('Macintosh') && navigator.maxTouchPoints > 1) // iPadOS
   );
+}
+
+// Liefert true, wenn die Sicherung (sehr wahrscheinlich) gespeichert wurde,
+// false bei Abbruch durch die Nutzerin.
+export async function exportBackup(data: AppData): Promise<boolean> {
+  const filename = `MusikPunkte_Sicherung_${timestamp()}.json`;
+  const json = JSON.stringify(data, null, 2);
+  if (Platform.OS !== 'web') {
+    throw new Error('Export ist derzeit nur in der Web-Version verfügbar.');
+  }
+  // Auf iPhone/iPad das Teilen-Menü nutzen: dort kann direkt
+  // "In Dateien sichern" (z. B. iCloud Drive) gewählt werden.
+  if (isIosLike() && 'share' in navigator && 'canShare' in navigator) {
+    const file = new File([json], filename, { type: 'application/json' });
+    if (navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] });
+        return true;
+      } catch (e) {
+        if ((e as Error).name === 'AbortError') return false; // abgebrochen
+        // sonst auf normalen Download zurückfallen
+      }
+    }
+  }
+  downloadFile(filename, json, 'application/json');
+  return true;
+}
+
+export function daysSinceBackup(lastBackup: string | null): number | null {
+  if (!lastBackup) return null;
+  const then = new Date(lastBackup).getTime();
+  if (!Number.isFinite(then)) return null;
+  return Math.max(0, Math.floor((Date.now() - then) / 86400000));
+}
+
+export function backupAgeLabel(lastBackup: string | null): string {
+  const days = daysSinceBackup(lastBackup);
+  if (days === null) return 'noch nie';
+  if (days === 0) return 'heute';
+  if (days === 1) return 'gestern';
+  return `vor ${days} Tagen`;
 }
 
 export function exportCsv(filename: string, rows: string[][]) {

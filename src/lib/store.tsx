@@ -7,12 +7,14 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { Platform } from 'react-native';
 
 import { newId } from './id';
 import { DEFAULT_SCHEMES } from './schemes';
 import type { AppData, Entry, SchoolClass, Student } from './types';
 
 const STORAGE_KEY = 'musikpunkte.data.v1';
+const LAST_BACKUP_KEY = 'musikpunkte.lastBackup';
 
 function emptyData(): AppData {
   return {
@@ -24,20 +26,22 @@ function emptyData(): AppData {
   };
 }
 
-// Stellt sicher, dass geladene/importierte Daten vollständig sind
+// Stellt sicher, dass geladene/importierte Daten vollständig sind.
+// Die eingebauten Schemata werden dabei immer auf den aktuellen Stand
+// gebracht (ältere Sicherungen kennen z. B. das repeatable-Flag nicht).
 export function normalizeData(raw: unknown): AppData {
   const base = emptyData();
   if (!raw || typeof raw !== 'object') return base;
   const d = raw as Partial<AppData>;
+  const customSchemes = (Array.isArray(d.schemes) ? d.schemes : []).filter(
+    (s) => !DEFAULT_SCHEMES.some((ds) => ds.id === s.id)
+  );
   return {
     version: 1,
     classes: Array.isArray(d.classes) ? d.classes : [],
     students: Array.isArray(d.students) ? d.students : [],
     entries: Array.isArray(d.entries) ? d.entries : [],
-    schemes:
-      Array.isArray(d.schemes) && d.schemes.length > 0
-        ? d.schemes
-        : DEFAULT_SCHEMES,
+    schemes: [...DEFAULT_SCHEMES, ...customSchemes],
   };
 }
 
@@ -59,6 +63,9 @@ type StoreContextValue = {
   updateEntry: (id: string, patch: Partial<Entry>) => void;
   deleteEntry: (id: string) => void;
   replaceAll: (data: AppData) => void;
+  // Zeitpunkt der letzten Datensicherung (ISO) für die Erinnerungsanzeige
+  lastBackup: string | null;
+  markBackedUp: () => void;
 };
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -66,6 +73,7 @@ const StoreContext = createContext<StoreContextValue | null>(null);
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<AppData>(emptyData);
   const [loaded, setLoaded] = useState(false);
+  const [lastBackup, setLastBackup] = useState<string | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -73,12 +81,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       try {
         const json = await AsyncStorage.getItem(STORAGE_KEY);
         if (json) setData(normalizeData(JSON.parse(json)));
+        const backup = await AsyncStorage.getItem(LAST_BACKUP_KEY);
+        if (backup) setLastBackup(backup);
       } catch (e) {
         console.warn('Konnte gespeicherte Daten nicht laden', e);
       } finally {
         setLoaded(true);
       }
     })();
+    // Browser bitten, den lokalen Speicher nicht automatisch zu räumen
+    // (wichtig v. a. auf iOS/iPadOS)
+    if (Platform.OS === 'web' && navigator.storage?.persist) {
+      navigator.storage.persist().catch(() => {});
+    }
   }, []);
 
   useEffect(() => {
@@ -169,6 +184,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setData(normalizeData(next));
   }, []);
 
+  const markBackedUp = useCallback(() => {
+    const now = new Date().toISOString();
+    setLastBackup(now);
+    AsyncStorage.setItem(LAST_BACKUP_KEY, now).catch(() => {});
+  }, []);
+
   const value: StoreContextValue = {
     data,
     loaded,
@@ -182,6 +203,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     updateEntry,
     deleteEntry,
     replaceAll,
+    lastBackup,
+    markBackedUp,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

@@ -8,12 +8,14 @@ const commonCategories = [
     name: 'Schriftliche Checks',
     shortName: 'Schr. Checks',
     maxPoints: 20,
+    repeatable: true,
   },
   {
     id: 'muendliche-checks',
     name: 'Mündliche Checks',
     shortName: 'Mündl. Checks',
     maxPoints: 10,
+    repeatable: true,
   },
   {
     id: 'praesentation',
@@ -27,6 +29,7 @@ const commonCategories = [
     name: 'Musikpraktische Übungen',
     shortName: 'Übungen',
     maxPoints: 5,
+    repeatable: true,
   },
   {
     id: 'konzertbesuch',

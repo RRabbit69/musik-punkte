@@ -13,6 +13,7 @@ import {
   Segmented,
   Sheet,
 } from '@/components/ui';
+import { backupAgeLabel, daysSinceBackup } from '@/lib/backup';
 import { sortStudents, useStore } from '@/lib/store';
 import type { SchoolClass } from '@/lib/types';
 
@@ -30,8 +31,12 @@ function byYearAndName(a: SchoolClass, b: SchoolClass): number {
 }
 
 export default function ClassListScreen() {
-  const { data, loaded, addClass, addStudent } = useStore();
+  const { data, loaded, addClass, addStudent, lastBackup } = useStore();
   const router = useRouter();
+
+  const backupDays = daysSinceBackup(lastBackup);
+  const hasData = data.entries.length > 0 || data.students.length > 0;
+  const backupOverdue = hasData && (backupDays === null || backupDays > 7);
 
   const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState('');
@@ -138,10 +143,17 @@ export default function ClassListScreen() {
       />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.inner}>
-          <Row style={{ justifyContent: 'space-between', marginBottom: 16 }}>
+          <Row style={{ justifyContent: 'space-between', marginBottom: 8 }}>
             <Text style={styles.heading}>Meine Klassen</Text>
             <Button title="+ Neue Klasse" onPress={openAdd} />
           </Row>
+
+          <Pressable onPress={() => router.push('/settings')}>
+            <Text style={[styles.backupInfo, backupOverdue && styles.backupOverdue]}>
+              Letzte Sicherung: {backupAgeLabel(lastBackup)}
+              {backupOverdue ? ' – jetzt sichern' : ''}
+            </Text>
+          </Pressable>
 
           {activeClasses.length === 0 && archivedClasses.length === 0 ? (
             <EmptyState
@@ -244,6 +256,8 @@ const styles = StyleSheet.create({
   container: { padding: 16, alignItems: 'center' },
   inner: { width: '100%', maxWidth: 800 },
   heading: { fontSize: 22, fontWeight: '700', color: C.text },
+  backupInfo: { fontSize: 13, color: C.textMuted, marginBottom: 16 },
+  backupOverdue: { color: C.warn, fontWeight: '600' },
   archiveHeading: { fontSize: 16, fontWeight: '700', color: C.textMuted },
   className: { fontSize: 18, fontWeight: '700', color: C.primaryDark },
   classMeta: { fontSize: 13, color: C.textMuted, marginTop: 2 },

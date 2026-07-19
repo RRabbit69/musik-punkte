@@ -25,7 +25,6 @@ import {
   GRADE_COLORS,
   gradeForPoints,
   gradeScaleText,
-  maxTotalPoints,
   parsePoints,
   sumByCategory,
   sumPoints,
@@ -218,7 +217,7 @@ export default function StudentScreen() {
               </Text>
               <Row>
                 <Text style={styles.totalPoints}>
-                  {formatPoints(total)} / {maxTotalPoints(scheme)} P
+                  {formatPoints(total)} P
                 </Text>
                 <View style={[styles.gradeBadge, { backgroundColor: GRADE_COLORS[grade.value] }]}>
                   <Text style={styles.gradeBadgeText}>
@@ -248,6 +247,26 @@ export default function StudentScreen() {
             ) : null}
             {scheme.categories.map((cat) => {
               const val = byCat[cat.id] ?? 0;
+              if (cat.repeatable) {
+                // Limit gilt pro Check/Übung, mehrere pro Semester möglich
+                const count = entries.filter((e) => e.categoryId === cat.id).length;
+                return (
+                  <Pressable key={cat.id} onPress={() => openNewEntry(cat.id)}>
+                    <Row style={{ marginBottom: 7 }}>
+                      <Text style={styles.catName} numberOfLines={1}>{cat.name}</Text>
+                      <Text style={styles.repeatInfo} numberOfLines={1}>
+                        {count === 0
+                          ? 'noch kein Eintrag'
+                          : count === 1
+                            ? '1 Eintrag'
+                            : `${count} Einträge`}{' '}
+                        · je max. {cat.maxPoints} P
+                      </Text>
+                      <Text style={styles.catPoints}>{formatPoints(val)} P</Text>
+                    </Row>
+                  </Pressable>
+                );
+              }
               const ratio = cat.maxPoints > 0 ? Math.min(val / cat.maxPoints, 1) : 0;
               const over = val > cat.maxPoints;
               return (
@@ -358,7 +377,13 @@ export default function StudentScreen() {
           <Text style={styles.hint}>{selectedCategory.hint}</Text>
         ) : null}
         <Field
-          label={`Punkte${selectedCategory ? ` (max. ${selectedCategory.maxPoints})` : ''}`}
+          label={`Punkte${
+            selectedCategory
+              ? selectedCategory.repeatable
+                ? ` (je Check/Übung max. ${selectedCategory.maxPoints})`
+                : ` (max. ${selectedCategory.maxPoints})`
+              : ''
+          }`}
           value={points}
           onChangeText={setPoints}
           keyboardType="decimal-pad"
@@ -454,6 +479,7 @@ const styles = StyleSheet.create({
   },
   barFill: { height: '100%', borderRadius: 5, backgroundColor: C.primary },
   catPoints: { width: 80, textAlign: 'right', fontSize: 13, color: C.textMuted },
+  repeatInfo: { flex: 1, fontSize: 12, color: C.textMuted, textAlign: 'right', marginRight: 8 },
   tapHint: { fontSize: 12, color: C.textMuted, marginTop: 8, fontStyle: 'italic' },
   carryValue: { fontSize: 13.5, fontWeight: '700', color: C.primaryDark },
   backArrow: {

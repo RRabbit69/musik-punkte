@@ -25,7 +25,6 @@ import {
   GRADE_COLORS,
   gradeForPoints,
   gradeScaleText,
-  maxTotalPoints,
   parsePoints,
   sumByCategory,
   sumPoints,
@@ -140,7 +139,11 @@ export default function ClassScreen() {
       'Gesamt',
       'Note',
       ...(semester === 2 ? ['Übertrag aus 1. Sem.'] : []),
-      ...scheme.categories.map((c) => `${c.name} (max. ${c.maxPoints})`),
+      ...scheme.categories.map((c) =>
+        c.repeatable
+          ? `${c.name} (je max. ${c.maxPoints})`
+          : `${c.name} (max. ${c.maxPoints})`
+      ),
     ]);
     for (const student of students) {
       const entries = filterEntries(data.entries, student.id, semester);
@@ -257,7 +260,7 @@ export default function ClassScreen() {
                     <Text style={[styles.nameCell, styles.th]}>Name</Text>
                     <View style={styles.pointCell}>
                       <Text style={styles.th}>Gesamt</Text>
-                      <Text style={styles.thMax}>max. {maxTotalPoints(scheme)}</Text>
+                      <Text style={styles.thMax}>Punkte</Text>
                     </View>
                     <Text style={[styles.gradeCell, styles.th]}>Note</Text>
                     {semester === 2 ? (
@@ -269,7 +272,9 @@ export default function ClassScreen() {
                     {scheme.categories.map((cat) => (
                       <View key={cat.id} style={styles.pointCell}>
                         <Text style={styles.th} numberOfLines={1}>{cat.shortName}</Text>
-                        <Text style={styles.thMax}>max. {cat.maxPoints}</Text>
+                        <Text style={styles.thMax}>
+                          {cat.repeatable ? `je ${cat.maxPoints} P` : `max. ${cat.maxPoints}`}
+                        </Text>
                       </View>
                     ))}
                   </Row>
@@ -322,7 +327,8 @@ export default function ClassScreen() {
                             ) : null}
                             {scheme.categories.map((cat) => {
                               const val = byCat[cat.id];
-                              const over = val !== undefined && val > cat.maxPoints;
+                              const over =
+                                !cat.repeatable && val !== undefined && val > cat.maxPoints;
                               return (
                                 <Text
                                   key={cat.id}
@@ -455,7 +461,12 @@ export default function ClassScreen() {
         </Text>
         <View style={{ height: 8 }} />
         <Text style={styles.fieldLabel}>
-          Punkte (leer lassen = kein Eintrag){bulkCategory ? ` · max. ${bulkCategory.maxPoints} P` : ''}
+          Punkte (leer lassen = kein Eintrag)
+          {bulkCategory
+            ? bulkCategory.repeatable
+              ? ` · je Check/Übung max. ${bulkCategory.maxPoints} P`
+              : ` · max. ${bulkCategory.maxPoints} P`
+            : ''}
         </Text>
         {students.map((student) => (
           <Row key={student.id} style={{ marginBottom: 6 }}>

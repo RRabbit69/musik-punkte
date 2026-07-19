@@ -42,6 +42,19 @@ Danach öffnet sich die App im Browser unter http://localhost:8081
   Es wird nichts ins Internet übertragen.
 - Regelmäßig über „Sicherung“ eine Sicherungsdatei erstellen!
   Beim Leeren der Browserdaten gehen die App-Daten sonst verloren.
+- Die Startseite zeigt an, wie lange die letzte Sicherung her ist
+  (orange, wenn älter als 7 Tage). Am iPad/iPhone öffnet „Jetzt
+  sichern“ das Teilen-Menü → „In Dateien sichern“ → iCloud Drive,
+  dann ist die Sicherung auch bei Geräteverlust geschützt.
+
+## Punkteschema-Besonderheiten
+
+- Schriftliche Checks, Mündliche Checks und Musikpraktische Übungen
+  sind **wiederholbar**: das Punktemaximum gilt pro Check/Übung,
+  pro Semester sind mehrere Einträge möglich.
+- Übertrag ins 2. Semester: automatisch die Punkte über der
+  „Sehr gut“-Grenze des 1. Semesters (max. +5); manueller Wert in
+  der Schülerbearbeitung überschreibt die Automatik.
 
 ## Online-Adresse (installierbare Web-App)
 
